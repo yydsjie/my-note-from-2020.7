@@ -1,0 +1,195 @@
+树的宽度优先遍历：
+(1)	基本原理：同样相似于广度优先遍历，在树中进行bfs同样结合树的存储结构邻接表，根据题目进行宽搜的特殊化。
+例题：
+ 
+#include<iostream>
+#include<queue>
+#include<cstring>
+
+using namespace std;
+
+const int N = 1e5+10;
+
+int e[N],en[N],h[N];
+int d[N];
+int idx;
+int n,m;
+void insert(int a, int b)
+{
+    e[idx]=b,en[idx]=h[a],h[a]=idx++;
+}
+int bfs()
+{
+    queue<int> q;
+    q.push(1);
+    memset(d,-1,sizeof d);
+    d[1]=0;
+    while(q.size())                           //判断列表是否为空
+    {
+        
+       int t=q.front();                          //取出并删除队头
+        q.pop();
+    
+       for(int i=h[t];i!=-1;i=en[i])
+        {
+            int j=e[i];
+            if(d[j]==-1)
+            {
+                d[j]=d[t]+1; 
+                q.push(j);                      //将新元素插入队尾
+            }
+        }
+        
+    }
+    return d[n];
+}
+int main()
+{
+    memset(h,-1,sizeof h);
+    scanf("%d%d",&n,&m);
+    for(int i=0;i<m;i++)
+    {
+        int a,b;
+        scanf("%d%d",&a,&b);
+        insert(a,b);
+    }
+    cout<<bfs()<<endl;
+    return 0;
+}
+拓扑排序:
+基本原理：一个有向无环图必定有一个入度为0的点，必定有一个拓扑序列，因为要保证输出的所有元素，下一个不能是上一个的前件，即每次输出时保证其入度为0，在输出的同时即在图中删除了这个点（基本相当于一个宽搜）。
+ 
+#include<iostream>
+#include<cstring>
+#include<algorithm>
+
+using namespace std;
+
+const int N = 1e5+10;
+
+int h[N],e[N],ne[N],idx;   //邻接表
+int q[N],d[N];          //q数组是宽搜队列，d存储的是每一个元素的入度
+int n,m;
+
+void insert(int a,int b)
+{
+    e[idx]=b,ne[idx]=h[a],h[a]=idx++;
+}
+int topsort()
+{
+    int hh=0,tt=0;                       //注意定义的初始的hh，tt如果其相等都为0，即代表相等无元素，并且tt与元素总数相等
+    
+    for(int i=1;i<=n;i++)
+    if(!d[i])  q[tt++]=i;
+    
+    while(hh<tt)
+    {
+        int t=q[hh++];
+        for(int i=h[t];i!=-1;i=ne[i])
+        {
+           int  j=e[i];
+           d[j]--;                //出栈元素找到其后件删除关系再判断
+           if(!d[j])  q[tt++]=j;    
+        }
+    }
+    return tt == n;      //tt存储的总共入栈的元素个数=n，代表所有元素已经全部宽搜过了
+}
+int main()
+{
+    scanf("%d%d",&n,&m);
+    
+    memset(h,-1,sizeof h);    //邻接表初始化
+    
+    for(int i=0;i<m;i++)
+    {
+        int a,b;
+        scanf("%d%d",&a,&b);
+        insert(a,b);
+        d[b]++;               //入度加1
+    }
+    if(topsort())  
+    for(int i=0;i<n;i++)
+    printf("%d ",q[i]);              //q因为是数组模拟的队列元素并未删除并保持其原本顺序所以直接输出即可
+    
+    else printf("-1\n");
+    
+    return 0;
+}
+最短路问题：
+ 
+(1)	单源最短路：
+
+1.非负权边：
+
+朴素dijkstra算法：
+
+(1)基本原理：有如下邻接矩阵（稀疏用邻接表存储）所存储的节点带权图
+ 
+如图所示，为一个邻接矩阵存储的图现求v0到v5的最短距离。
+（1）v0开始，标记并访问v0，遍历所有与v0相连的边，并找出其中权值最小的边，即v0到v1这条。
+（2）标记v1，遍历v1所有后件，比较由v0到v1再到其后件(v3)与原v0到其后件(v3)的距离，若小则更新dist[3](v0到v3的最短距离)
+（3）找寻v0到其他未访问点的距离最小值，找出最小距离边v0-v1-v3，然后标记v3，遍历其后件，比较v0到其后件(v4,v2)与v0到v3再到其后件的距离，此时v0到v4的距离小于v0到v3再到v4的距离，所以无需更新。v0无法直接到v2，距离相当于无穷，直接更新值即可。
+（4）找寻v0到其他未访问点的距离最小值边，找出v0—v4，标记v4，遍历后件更新最小值dist[5]。
+（5）找寻v0到其他未访问点的距离最小值边，找出v0-v1-v3-v2，标记v2，遍历其后件更新最小值dist[5]。
+（6）找寻v0到其他未访问点的距离最小值边，找出v0-v1-v3-v2-v5,标记v5，没有后件遍历结束。
+附：类似宽搜但又不同，宽搜只适合用于权全部相同时，这样路径花费相同根据遍历次数（即相当于时间相同速度相同，路程越短越先到达，一条走过的路上只允许有一个人，先到先得，从而得出最优解）可逐渐淘汰，而权不同时，需要将所有可能路径全部遍历这是一个最优解覆盖的过程，在发现新路径的同时更新最优解。
+例题：
+ 
+#include<iostream>
+#include<cstring>
+#include<algorithm>
+
+using namespace std;
+
+const int N = 510 ;
+
+int g[N][N];      //用邻接矩阵来存储稠密图
+int dist[N];            //存储1号点到某一点的距离
+int n,m;
+bool st[N];
+int dijkstra()
+{
+    memset(dist , 0x3f , sizeof dist);
+    dist[1] = 0;
+    
+    for(int i = 0; i < n ; i++)
+    {
+        int t = -1;
+        for(int j = 1; j<=n ; j++)
+        {
+            if(!st[j]&&(t==-1 ||dist[j]< dist[t] ))       //找出未标记点中与v0点距离最近的点
+            t = j;
+        }
+        
+        st[t] = true;           //标记
+        
+        if(t == n) break;      //判断是否已经到达，减少计算量
+        
+        for(int j = 1;j <= n;j++)
+        dist[j] =  min(dist[j] , dist[t] + g[t][j]);     //更新最短距离
+    
+    }
+    if(dist[n] == 0x3f3f3f3f)  return -1;     //说明n点没有与1点连通
+    else              return dist[n];
+}
+int main()
+{
+    scanf("%d%d",&n,&m);
+    
+    memset(g , 0x3f , sizeof g);    //按字节赋值int4个字节相当于ox3f3f3f3f
+    
+    while(m--)
+    {
+        int a,b,k;
+        scanf("%d%d%d",&a,&b,&k);
+        g[a][b] = min(g[a][b],k);
+    }
+    
+    printf("%d\n",dijkstra());
+
+    return 0;
+    
+}
+堆优化dijkstra算法（适用稀疏图）：
+
+
