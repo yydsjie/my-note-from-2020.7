@@ -1,0 +1,278 @@
+
+Bellman-ford算法：
+(1)	基本原理：
+用结构体来存储每一条边的值
+Struct edge
+{
+Int a,b,w;
+}e[M]
+在下列循环中逐渐得出最短路径
+for(int i = 0;i < k;i++)
+    {
+        memcpy(backup,dist,sizeof dist);   //备份上次的迭代结果
+        
+        for (int j = 0; j < m; j++) 
+        {
+            int a = edges[j].a, b = edges[j].b, w = edges[j].w;
+            dist[b]= min(dist[b],backup[a]+w);   //在遍历过程中用上次的迭代结果来相加，可以限制最短路经过的边数由k决定
+        }
+}
+k如何决定最优解的边数？
+假设样例：
+ 
+      首先，进入循环会进行备份dist，然后开始遍历所有边，并更新值，dist[1]=0，所以，1到2这条边的dist会被更新为1，然后2到3这条边时，备份的边1到2的距离为无穷，+w肯定比原来大，所以更新不了，然后1到3这条边，dist更新为3，每次循环都会备份，使得这次最优解的可选边比上次加1，从而k决定了最优解经过的边数。
+附：并且此方法可以判断点1到点n间是否有负权环（如下图），如果在路径上，则会一直循环，直到k次循环（最小值在循环中持续减少），不在则不影响。
+ 
+样例：
+ 
+#include<iostream>
+#include<cstring>
+#include<algorithm>
+
+using namespace std;
+
+const int N = 510,M=10010;
+
+int n,m,k;
+int dist[N],backup[N];   //backup用来存储上次迭代的备份
+
+struct edge
+{
+    int a,b,w;
+}edges[M];            //用来存储每一条边的值
+
+int bellman_ford()
+{
+    memset(dist,0x3f,sizeof dist);        
+    dist[1] = 0;
+    
+    for(int i = 0;i < k;i++)
+    {
+        memcpy(backup,dist,sizeof dist);   //备份上次的迭代结果
+        
+        for (int j = 0; j < m; j++) 
+        {
+            int a = edges[j].a, b = edges[j].b, w = edges[j].w;
+            dist[b]= min(dist[b],backup[a]+w);   //在遍历过程中用上次的迭代结果来相加，可以限制最短路经过的边数由k决定
+        }
+    }
+    if(dist[n]>0x3f3f3f3f/2)  return 0;     //可能没有到达，但是有负权边更新过就会小于0x3f3f3f3f
+    else return dist[n];
+}
+int main()
+{
+    scanf("%d%d%d",&n,&m,&k);
+    
+    for (int i = 0; i < m; i++) 
+    {
+        int a, b, w;
+        scanf("%d%d%d", &a, &b, &w);
+        edges[i] = {a, b, w};
+    }
+    int t=bellman_ford();
+    
+    if(t==0) printf("impossible\n");   //如果结果正好为0可能会影响
+    else     printf("%d\n",t);
+
+    return 0;
+}
+Spfa算法：
+(1)	基本原理：相当bellman-ford算法的优化版本，bellman算法是将点一层层的更新，而spfa算法在这个过程中将中途未更新的点筛掉，来减少路径达到加快速度的目的。
+ 
+样例：
+ 
+#include<iostream>
+#include<queue>
+#include<cstring>
+#include<algorithm>
+using namespace std;
+
+const int N = 1e5+10;
+
+int n,m;
+int h[N],e[N],ne[N],w[N],idx;
+bool st[N];
+int dist[N];
+
+void insert(int a,int b ,int c)
+{
+    e[idx]=b,w[idx]=c,ne[idx]=h[a],h[a]=idx++;
+}
+int spfa()
+{
+    memset(dist,0x3f,sizeof dist);
+    dist[1]=0;
+    
+    queue<int> q;
+    q.push(1);
+    st[1]=true;
+    
+    while(q.size())
+    {
+        int t=q.front();
+        q.pop();
+        st[t]=false;
+        
+        for(int i=h[t];i!=-1;i=ne[i])
+        {
+            int j=e[i];
+            if(dist[j]>dist[t]+w[i])          //如果可以更新路径才会进入
+            {
+                dist[j]=dist[t]+w[i];
+                if(!st[j])
+                {
+                    q.push(j);
+                    st[j]=true;        //只有更新过的点才会放入队列中进行下来的更新
+                }
+            }
+        }
+    }
+    
+    if(dist[n]==0x3f3f3f3f) return 0;
+    else return dist[n];
+}
+int main()
+{
+    scanf("%d%d",&n,&m);
+    
+    memset(h,-1,sizeof h);
+    
+    while(m--)
+    {
+        int a,b,c;
+        scanf("%d%d%d",&a,&b,&c);
+        insert(a,b,c);
+    }
+ 
+    int t=spfa();
+    
+    if(t==0) printf("impossible\n");
+    else printf("%d\n",t);
+    return 0;
+}
+Spfa求负环：
+基本原理：在进行循环的过程中，加上一个cnt[N]数组来记录点到点之间的边数，并加上判断条件：if(cnt[i]>=n)return true，因为在x<n时如果经过边数大于等于n就说明经过了至少n+1个点，必存在负环。
+例题：
+ 
+#include<iostream>
+#include<queue>
+#include<cstring>
+#include<algorithm>
+using namespace std;
+
+const int N = 1e5+10;
+
+int n,m;
+int h[N],e[N],ne[N],w[N],idx;
+bool st[N];
+int dist[N],cnt[N];
+
+void insert(int a,int b ,int c)
+{
+    e[idx]=b,w[idx]=c,ne[idx]=h[a],h[a]=idx++;
+}
+int spfa()
+{
+                    
+                        //因为只是判断负环不需要初始化,即使未初始化，但是遇到负权路径还是会更新的。
+    queue<int> q;
+    
+    for(int i=1;i<=n;i++)
+    {
+        q.push(i);
+        st[i]=true;      //防止1到不了负环所在位置，将全部元素入栈.
+    }
+    
+    while(q.size())
+    {
+        int t=q.front();
+        q.pop();
+        st[t]=false;
+        
+        for(int i=h[t];i!=-1;i=ne[i])
+        {
+            int j=e[i];
+            if(dist[j]>dist[t]+w[i])          //如果可以更新路径才会进入
+            {
+                dist[j]=dist[t]+w[i];
+                
+                cnt[j]=cnt[t]+1;          //如果经过的边数目>=n说明至少经过n+1个点肯定有负环存在
+                if(cnt[i]>=n) return true;
+                if(!st[j])
+                {
+                    q.push(j);
+                    st[j]=true;        //只有更新过的点才会放入队列中进行下来的更新
+                }
+            }
+        }
+    }
+    
+    return false;
+}
+int main()
+{
+    scanf("%d%d",&n,&m);
+    
+    memset(h,-1,sizeof h);
+    
+    while(m--)
+    {
+        int a,b,c;
+        scanf("%d%d%d",&a,&b,&c);
+        insert(a,b,c);
+    }
+ 
+    if(spfa()) printf("Yes\n");
+    else printf("No\n");
+    return 0;
+}
+
+(2)多源最短路：
+Floyd算法：
+(1)	基本原理：通过i-k-j这条边的距离来更新i-j之间的距离，区间由小变大，直到遍历过每一个点为止。
+例题： 
+#include<iostream>
+
+using namespace std;
+
+const int N = 210,inf=1e9;
+int n,m,q;
+
+int g[N][N];
+
+void floyd()
+{
+    for(int k=1;k<=n;k++)
+    for(int i=1;i<=n;i++)
+    for(int j=1;j<=n;j++)
+        g[i][j]=min(g[i][j],g[i][k]+g[k][j]);      
+}
+int main()
+{
+    scanf("%d%d%d",&n,&m,&q);
+    
+    for(int i=1;i<=n;i++)
+    for(int j=1;j<=n;j++)
+    {
+        if(i==j) g[i][j]=0;
+        else g[i][j]=inf;
+    }
+    while(m--)
+    {
+        int x,y,z;
+        scanf("%d%d%d",&x,&y,&z);
+        g[x][y]=min(g[x][y],z);
+    }
+    
+    floyd();
+    
+    while(q--)
+    {
+        int a,b;
+        scanf("%d%d",&a,&b);
+        if(g[a][b]>inf/2) printf("impossible\n");    //有负权边
+        else printf("%d\n",g[a][b]);
+    }
+    return 0;
+}
+
