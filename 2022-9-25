@@ -1,0 +1,78 @@
+质数筛:
+1埃式筛法：
+基本原理：从2开始遍历，只要是遍历到某个数的倍数便删掉其在质数集(标记)，直到n为止，最后留下的便是质数。优化方法（减少重复筛掉同一个数的次数），将其放在质数的判定中，因为任意一个数都可分解为有限个质数的乘积，所以只筛质数的倍数即可。
+2.线性筛法：
+基本原理：
+
+
+1.
+#include<iostream>
+
+using namespace std;
+
+const int N=1e6+10;
+bool st[N];
+int prime[N]={0};
+int cnt=0;
+void get_prime(int n)
+{
+    for(int i=2;i<=n;i++)
+    {
+        if(!st[i])
+        {
+            prime[cnt++]=i;
+            for(int j=i;j<=n;j+=i) st[j]=true;//可以用质数就把所有的合数都筛掉；
+        }
+    }
+}
+int main()
+{
+    int n;
+    scanf("%d",&n);
+    
+    get_prime(n);
+    
+    printf("%d\n",cnt);
+    return 0;
+}
+线性筛法：
+基本原理：核心步骤：1. i%primes[j] == 0:说明primes[j]是i的最小质因数，其次也说明是i*primes[j]的最小质因数，原因:这个数由primes[j]和i的乘积组成，而i和primes[j]的最小质因数都为primes[j]。
+2.i%primes[j]!=0,说明primes[j] 一定小于i的所有质因子，所以primes[j]一定是primes[j]*j的最小质因子。
+示例：
+#include<iostream>
+
+using namespace std;
+
+const int N = 1e6+10;
+
+int primes[N],st[N];
+int cnt;
+
+void get_primes(int n)
+{
+    for(int i=2;i<=n;i++)
+    {
+        if(!st[i])
+        primes[cnt++]=i;
+        
+        for(int j=0;primes[j]<=n/i; j++)
+        {
+            st[i*primes[j]]=true;         //筛掉合数，每一个合数都会被其最小质因子筛掉
+            if(i%primes[j]==0) break;    //说明primes[j]是i的最小质因数，其次也说明是i*primes[j]的最小质因数，原因:这个数由primes[j]和i的乘积组成，而i和primes[j]的最小质因数都为primes[j]
+        }
+        
+    }
+}
+
+int main()
+{
+    int n;
+    scanf("%d",&n);
+    
+    get_primes(n);
+    
+    printf("%d\n",cnt);
+    
+    return 0;
+}
+       
