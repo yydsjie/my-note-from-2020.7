@@ -1,0 +1,142 @@
+4.基本原理：
+
+C(a,b)=a!/(b!(a-b)!),分解质因数=p1^a1*p2^a2...pk^ak;
+
+a!中p出现的次数=[a/p]+[a/p^2]+...(p^k<a)
+
+举个例子:5!=5*4*3*2*1,2的出现次数=[5/2]+[5/4]=3,就像一个三角矩阵一样：
+
+第一次算的是第一层，第二次是第二层。
+
+样例：
+
+#include<iostream>
+
+#include<algorithm>
+
+#include<vector>
+
+using namespace std;
+
+const int N = 5010;
+
+int primes[N],cnt;
+
+int sum[N];
+
+bool st[N];
+
+void get_primes(int n)   //求质因数
+
+{
+
+    for(int i=2;i<=n;i++)
+    
+    {
+    
+        if(!st[i]) primes[cnt++]=i;
+        
+        for(int j=0;primes[j]*i<=n;j++)
+        
+        {
+        
+            st[primes[j]*i]=true;
+            
+            if(i%primes[j]==0)break;
+            
+        }
+        
+    }
+    
+}
+
+int get(int n,int p)   //求n! p的出现次数
+
+{
+
+    int res=0;
+    
+    while(n)
+    
+    {
+    
+        res+=n/p;
+        
+        n/=p;
+        
+    }
+    
+    return res;
+    
+}
+
+vector<int> mul(vector<int> a,int b)
+
+{
+
+    vector<int> c;
+    
+    int t=0;
+    
+    for(int i=0;i<a.size();i++)
+    
+    {
+    
+        t+=a[i]*b;
+        
+        c.push_back(t%10);
+        
+        t/=10;
+        
+    }
+    
+    while(t)
+    
+    {
+    
+        c.push_back(t%10);
+        
+        t/=10;
+        
+    }
+    
+    return c;
+    
+}
+
+int main()
+
+{
+    int a,b;
+    
+    scanf("%d%d",&a,&b);
+    
+    get_primes(a);
+    
+    for(int i=0;i<cnt ;i++)
+    
+    {
+    
+        int p=primes[i];
+        
+        sum[i]=get(a,p)-get(b,p)-get(a-b,p); 
+        
+    }
+    
+    vector<int> res;
+    
+    res.push_back(1);
+    
+    for(int i=0;i<cnt;i++)
+    
+    for(int j=0;j<sum[i];j++)
+    
+    res=mul(res,primes[i]);
+    
+    for(int i=res.size()-1;i>=0;i--)
+    
+    printf("%d",res[i]);
+    
+    return 0;
+    
+}
